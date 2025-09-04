@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ailab-utils"
+version = "0.1.0"
+authors = [
+  { name="AILAB", email="support@eailab.sh" },
+]
+description = "A utility package for AILab services, including an AI Tasks client."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "requests>=2.20.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ailab-sh/ailab-utils"
