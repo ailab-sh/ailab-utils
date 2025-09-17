@@ -33,28 +33,26 @@ from ailab_utils import SimilarityClient
 client = SimilarityClient(api_key="secret-key-1")
 
 try:
-    # Create a site for organizing articles
-    site = client.create_site(
-        site_id=1,
-        name="Tech Blog",
-        description="Articles about technology"
-    )
-    
-    # Add an article to the site
-    article = client.create_article(
-        site_id=1,
-        article_id=1001,
+    # Create pages for similarity indexing
+    page1 = client.create_page(
+        page_id=1,
         text="Artificial intelligence is transforming how we work and live..."
     )
-    
-    # Find similar articles
-    similarities = client.find_similar(
-        site_id=1,
-        article_id=1001,
-        text="AI and machine learning are changing the world"
+
+    page2 = client.create_page(
+        page_id=2,
+        text="Machine learning algorithms are revolutionizing data analysis..."
     )
-    
-    print(f"Found {len(similarities['similarities'])} similar articles")
+
+    # Find similar pages
+    similarities = client.find_similar(
+        link_task_id=1,
+        content="AI and machine learning are changing the world",
+        page_ids=[1, 2],
+        similarity_percentage=75.0
+    )
+
+    print(f"Found similarities: {similarities}")
 
 except Exception as e:
     print(f"An error occurred: {e}")
