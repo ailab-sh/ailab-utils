@@ -69,3 +69,16 @@ class SimilarityClient:
         response = requests.post(endpoint, headers=self.headers, json=payload, timeout=10)
         response.raise_for_status()
         return response.json()
+
+    def compare_questions(self, new_questions: List[str], existing_questions: List[str], similarity_threshold: float = 50.0) -> dict:
+        """Compare new questions against existing questions and return matches above threshold."""
+        endpoint = f"{self.base_url}/api/compare-questions"
+        payload = {
+            "similarityThreshold": similarity_threshold,
+            "newQuestions": new_questions,
+            "existingQuestions": existing_questions
+        }
+
+        response = requests.post(endpoint, headers=self.headers, json=payload, timeout=30)
+        response.raise_for_status()
+        return response.json()

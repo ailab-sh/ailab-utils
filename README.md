@@ -54,6 +54,15 @@ try:
 
     print(f"Found similarities: {similarities}")
 
+    # Compare new questions against existing ones
+    matches = client.compare_questions(
+        new_questions=["What is AI?", "How does ML work?"],
+        existing_questions=["Tell me about artificial intelligence", "Explain machine learning"],
+        similarity_threshold=50.0
+    )
+
+    print(f"Question matches: {matches}")
+
 except Exception as e:
     print(f"An error occurred: {e}")
 ```

@@ -209,5 +209,4 @@ __marimo__/
 # Test artifacts
 tests/test_config.py
 .env.test
-CLAUDE.md
 tests
