@@ -67,3 +67,35 @@ except Exception as e:
     print(f"An error occurred: {e}")
 ```
 
+### LLM Client
+```python
+from ailab_utils import LLMClient
+
+client = LLMClient(api_key="your-api-key")
+
+try:
+    # List available models
+    models = client.list_models()
+    print(f"Available models: {[m['id'] for m in models]}")
+
+    # Simple inference
+    response = client.inference(
+        model="deepseek-r1",
+        prompt="What is 2+2?"
+    )
+    print(f"Response: {response['choices'][0]['message']['content']}")
+    print(f"Tokens used: {response['usage']['total_tokens']}")
+
+    # Inference with parameters
+    response = client.inference(
+        model="deepseek-r1",
+        prompt="Explain quantum computing in one sentence.",
+        temperature=0.7,
+        max_tokens=100
+    )
+    print(f"Response: {response['choices'][0]['message']['content']}")
+
+except Exception as e:
+    print(f"An error occurred: {e}")
+```
+
