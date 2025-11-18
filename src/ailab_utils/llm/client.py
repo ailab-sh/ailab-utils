@@ -90,7 +90,7 @@ class LLMClient:
             endpoint,
             headers=self.headers,
             json=payload,
-            timeout=60
+            timeout=600
         )
         response.raise_for_status()
         return response.json()
