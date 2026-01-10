@@ -1,6 +1,8 @@
 """
 LLM Inference Client for api.ailab.sh
 """
+import json
+import re
 from typing import List, Dict, Optional
 import requests
 
@@ -57,19 +59,21 @@ class LLMClient:
         """
         Send inference request to the LLM.
 
+        Uses streaming internally to avoid Cloudflare's 60-second timeout,
+        then returns the complete response. Thinking content (<think> tags)
+        is filtered out from the final response.
+
         Args:
             model: Model alias or name (e.g., "deepseek-r1", "GPT-OSS-120")
             prompt: User prompt/question
-            **kwargs: Additional parameters (temperature, max_tokens, stream, etc.)
+            **kwargs: Additional parameters (temperature, max_tokens, etc.)
 
         Returns:
             OpenAI-compatible response dictionary with:
             - id: Response ID
             - object: "chat.completion"
-            - created: Unix timestamp
             - model: Model used
             - choices: List with message content and finish_reason
-            - usage: Token usage (prompt_tokens, completion_tokens, total_tokens)
 
         Raises:
             requests.HTTPError: If the request fails
@@ -86,11 +90,66 @@ class LLMClient:
         # Add any additional parameters from kwargs
         payload.update(kwargs)
 
+        # Force streaming to avoid Cloudflare 60s timeout
+        payload["stream"] = True
+
         response = requests.post(
             endpoint,
             headers=self.headers,
             json=payload,
+            stream=True,
             timeout=600
         )
         response.raise_for_status()
-        return response.json()
+
+        # Parse SSE stream and collect content
+        full_content = ""
+        response_id = None
+        model_name = None
+        finish_reason = None
+
+        for line in response.iter_lines(decode_unicode=True):
+            if not line or not line.startswith("data: "):
+                continue
+
+            data = line[6:]  # Remove "data: " prefix
+            if data == "[DONE]":
+                break
+
+            chunk = json.loads(data)
+
+            # Capture metadata from first chunk
+            if response_id is None:
+                response_id = chunk.get("id")
+                model_name = chunk.get("model")
+
+            # Extract content delta
+            choices = chunk.get("choices", [])
+            if choices:
+                delta = choices[0].get("delta", {})
+                content = delta.get("content", "")
+                if content:
+                    full_content += content
+
+                # Capture finish reason
+                if choices[0].get("finish_reason"):
+                    finish_reason = choices[0]["finish_reason"]
+
+        # Filter out <think>...</think> content
+        filtered_content = re.sub(r'<think>.*?</think>', '', full_content, flags=re.DOTALL)
+        filtered_content = filtered_content.strip()
+
+        # Build OpenAI-compatible response
+        return {
+            "id": response_id or "chatcmpl-unknown",
+            "object": "chat.completion",
+            "model": model_name or model,
+            "choices": [{
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": filtered_content
+                },
+                "finish_reason": finish_reason or "stop"
+            }]
+        }

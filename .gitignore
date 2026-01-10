@@ -210,3 +210,7 @@ __marimo__/
 tests/test_config.py
 .env.test
 tests
+
+# Temporary test folder
+tmp/
+.DS_Store
