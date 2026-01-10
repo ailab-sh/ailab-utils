@@ -87,10 +87,8 @@ class LLMClient:
             ]
         }
 
-        # Add any additional parameters from kwargs
         payload.update(kwargs)
 
-        # Force streaming to avoid Cloudflare 60s timeout
         payload["stream"] = True
 
         response = requests.post(
@@ -102,28 +100,27 @@ class LLMClient:
         )
         response.raise_for_status()
 
-        # Parse SSE stream and collect content
         full_content = ""
         response_id = None
         model_name = None
+        created = None
         finish_reason = None
 
         for line in response.iter_lines(decode_unicode=True):
             if not line or not line.startswith("data: "):
                 continue
 
-            data = line[6:]  # Remove "data: " prefix
+            data = line[6:]
             if data == "[DONE]":
                 break
 
             chunk = json.loads(data)
 
-            # Capture metadata from first chunk
             if response_id is None:
                 response_id = chunk.get("id")
                 model_name = chunk.get("model")
+                created = chunk.get("created")
 
-            # Extract content delta
             choices = chunk.get("choices", [])
             if choices:
                 delta = choices[0].get("delta", {})
@@ -131,25 +128,27 @@ class LLMClient:
                 if content:
                     full_content += content
 
-                # Capture finish reason
                 if choices[0].get("finish_reason"):
                     finish_reason = choices[0]["finish_reason"]
 
-        # Filter out <think>...</think> content
         filtered_content = re.sub(r'<think>.*?</think>', '', full_content, flags=re.DOTALL)
         filtered_content = filtered_content.strip()
 
-        # Build OpenAI-compatible response
-        return {
-            "id": response_id or "chatcmpl-unknown",
+        result = {
+            "id": response_id,
             "object": "chat.completion",
-            "model": model_name or model,
+            "model": model_name,
             "choices": [{
                 "index": 0,
                 "message": {
                     "role": "assistant",
                     "content": filtered_content
                 },
-                "finish_reason": finish_reason or "stop"
+                "finish_reason": finish_reason
             }]
         }
+
+        if created is not None:
+            result["created"] = created
+
+        return result

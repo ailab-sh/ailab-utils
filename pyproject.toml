@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ailab-utils"
-version = "0.1.3"
+version = "0.1.4"
 authors = [
   { name="AILAB", email="support@eailab.sh" },
 ]
